@@ -1,0 +1,999 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PETAK — Kuota Hara Pupuk Bersubsidi</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --tanah:#231C12;         /* teks utama, warna tanah lembap */
+  --tanah-2:#5C5344;       /* teks sekunder */
+  --sawah:#E4E7DC;         /* latar aplikasi */
+  --kertas:#FBFBF7;        /* panel */
+  --garis:#CFD4C3;         /* garis pemisah */
+  --garis-2:#E3E6DA;
+  --daun:#2E6B41;          /* aksi utama */
+  --daun-mu:#DCE9DF;
+  --gabah:#B08300;         /* nilai hasil / rupiah */
+  --karat:#9E3B26;         /* defisit / peringatan */
+  --karat-mu:#F6E3DE;
+  --n:#2E6B41; --p:#9C6A1E; --k:#5B5590;
+  --r:3px;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:var(--sawah); color:var(--tanah);
+  font-family:Archivo,"Helvetica Neue",Arial,sans-serif;
+  font-size:15px; line-height:1.5;
+  -webkit-font-smoothing:antialiased;
+  font-variant-numeric:tabular-nums;
+}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer;background:none;border:none}
+h1,h2,h3,h4{margin:0;font-weight:600;letter-spacing:-.015em;line-height:1.2}
+h2{font-size:22px}
+h3{font-size:16px}
+p{margin:0 0 10px}
+a{color:var(--daun)}
+:focus-visible{outline:2px solid var(--daun);outline-offset:2px}
+
+/* ---------- rangka aplikasi ---------- */
+.app{display:grid;grid-template-columns:212px 1fr;min-height:100vh}
+.rail{background:#1E2A1F;color:#D9E2D6;padding:14px 10px;display:flex;flex-direction:column;gap:2px;position:sticky;top:0;height:100vh}
+.mark{padding:6px 8px 16px}
+.mark b{display:block;font-size:20px;letter-spacing:.02em;color:#fff;font-weight:700}
+.mark span{font-size:11.5px;color:#8FA48E;line-height:1.35;display:block;margin-top:3px}
+.navbtn{display:flex;gap:9px;align-items:flex-start;padding:8px 9px;border-radius:var(--r);color:#C6D3C4;text-align:left;width:100%;font-size:13.5px}
+.navbtn:hover{background:#26331F}
+.navbtn[aria-current=true]{background:#F0F3EA;color:#1E2A1F;font-weight:600}
+.navbtn small{display:block;font-weight:400;font-size:11px;opacity:.75;margin-top:1px}
+.navbtn i{font-style:normal;width:16px;flex:none;text-align:center;opacity:.9}
+.railfoot{margin-top:auto;font-size:11px;color:#7E9280;padding:8px;border-top:1px solid #2E3D2C;line-height:1.45}
+
+.main{min-width:0;display:flex;flex-direction:column}
+.topbar{background:var(--kertas);border-bottom:1px solid var(--garis);padding:9px 22px;display:flex;gap:14px;align-items:center;flex-wrap:wrap;position:sticky;top:0;z-index:20}
+.ctx{font-size:12.5px;color:var(--tanah-2)}
+.ctx b{color:var(--tanah);font-weight:600}
+.spacer{flex:1}
+.pill{border:1px solid var(--garis);border-radius:100px;padding:3px 11px;font-size:12.5px;background:#fff}
+select.pill{padding-right:6px}
+.view{padding:22px;max-width:1180px;width:100%}
+
+/* ---------- komponen ---------- */
+.panel{background:var(--kertas);border:1px solid var(--garis);border-radius:var(--r)}
+.pad{padding:16px 18px}
+.hd{padding:12px 18px;border-bottom:1px solid var(--garis-2);display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.hd h3{flex:1;min-width:160px}
+.sub{color:var(--tanah-2);font-size:12.5px;margin:2px 0 0}
+.grid{display:grid;gap:14px}
+.btn{background:var(--daun);color:#fff;border-radius:var(--r);padding:8px 15px;font-size:14px;font-weight:600}
+.btn:hover{background:#245635}
+.btn[disabled]{background:#B4BDB0;cursor:not-allowed}
+.btn.ghost{background:#fff;color:var(--tanah);border:1px solid var(--garis);font-weight:500}
+.btn.ghost:hover{background:#F0F2EA}
+.btn.sm{padding:5px 11px;font-size:13px}
+.chip{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;border-radius:100px;padding:2px 9px;border:1px solid var(--garis);background:#fff;white-space:nowrap}
+.chip.rendah{background:var(--karat-mu);border-color:#E3BFB5;color:#7E2F1E}
+.chip.sedang{background:#FBF0D8;border-color:#E8D7A8;color:#7A5A06}
+.chip.tinggi{background:var(--daun-mu);border-color:#BCD5C1;color:#1F4F2F}
+.dot{width:7px;height:7px;border-radius:50%;flex:none}
+table{border-collapse:collapse;width:100%;font-size:13.5px}
+th{text-align:left;font-weight:600;font-size:12px;color:var(--tanah-2);padding:7px 10px;border-bottom:1px solid var(--garis)}
+td{padding:8px 10px;border-bottom:1px solid var(--garis-2)}
+tr:last-child td{border-bottom:none}
+.num{text-align:right}
+.mut{color:var(--tanah-2)}
+.big{font-size:27px;font-weight:700;letter-spacing:-.02em;line-height:1.1}
+.big small{font-size:13px;font-weight:500;color:var(--tanah-2);letter-spacing:0}
+.kpi{padding:14px 16px;border-right:1px solid var(--garis-2)}
+.kpi:last-child{border-right:none}
+.kpi .lbl{font-size:12.5px;color:var(--tanah-2);margin-bottom:5px}
+.bar{height:7px;background:#E7E9DF;border-radius:100px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--daun);border-radius:100px;transition:width .35s ease}
+.note{background:#F4F6EC;border-left:3px solid var(--daun);padding:10px 13px;font-size:13px;border-radius:0 var(--r) var(--r) 0}
+.note.warn{background:var(--karat-mu);border-color:var(--karat)}
+.note.gold{background:#FBF4E0;border-color:var(--gabah)}
+
+/* ---------- peta petak ---------- */
+.mapwrap{display:grid;grid-template-columns:1fr 320px;gap:0}
+.mapbox{position:relative;background:#EEF0E6;border-right:1px solid var(--garis-2);min-height:430px}
+svg.field{display:block;width:100%;height:auto}
+.petak{cursor:pointer;stroke:#FBFBF7;stroke-width:1.4;transition:opacity .2s}
+.petak:hover{stroke:#231C12;stroke-width:2}
+.petak.sel{stroke:#231C12;stroke-width:2.6}
+.legend{position:absolute;left:12px;bottom:12px;background:rgba(251,251,247,.94);border:1px solid var(--garis);border-radius:var(--r);padding:9px 11px;font-size:11.5px;line-height:1.7}
+.legend b{font-weight:600;display:block;margin-bottom:4px;font-size:11.5px}
+.legrow{display:flex;align-items:center;gap:7px}
+.legsw{width:13px;height:13px;border-radius:2px;border:1px solid rgba(0,0,0,.15)}
+.layers{display:flex;gap:5px;flex-wrap:wrap}
+.tab{border:1px solid var(--garis);background:#fff;border-radius:100px;padding:4px 12px;font-size:12.5px}
+.tab[aria-pressed=true]{background:var(--tanah);color:#fff;border-color:var(--tanah)}
+.detail{padding:14px 16px;font-size:13.5px;max-height:560px;overflow:auto}
+.kv{display:flex;justify-content:space-between;gap:12px;padding:5px 0;border-bottom:1px solid var(--garis-2)}
+.kv:last-child{border-bottom:none}
+.kv span:first-child{color:var(--tanah-2)}
+
+/* ---------- penebusan ---------- */
+.split{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.swap{display:grid;grid-template-columns:1.15fr auto auto auto;gap:10px;align-items:center;padding:11px 0;border-bottom:1px solid var(--garis-2)}
+.swap:last-of-type{border-bottom:none}
+.stepper{display:flex;align-items:center;border:1px solid var(--garis);border-radius:var(--r);overflow:hidden;background:#fff}
+.stepper button{width:30px;height:32px;font-size:17px;line-height:1;color:var(--tanah-2)}
+.stepper button:hover{background:#EEF0E6;color:var(--tanah)}
+.stepper input{width:62px;height:32px;border:none;border-left:1px solid var(--garis-2);border-right:1px solid var(--garis-2);text-align:center;background:#fff;font-weight:600}
+.meter{height:26px;border-radius:var(--r);background:#E7E9DF;position:relative;overflow:hidden;border:1px solid var(--garis)}
+.meter i{position:absolute;inset:0 auto 0 0;background:var(--daun);transition:width .3s ease}
+.meter i.over{background:var(--karat)}
+.meter{height:16px}
+.meterlbl{display:flex;justify-content:space-between;align-items:baseline;font-size:13px;margin-bottom:5px}
+.struk{font-size:13px;line-height:1.65}
+.struk .row{display:flex;justify-content:space-between;gap:10px}
+.dash{border-top:1px dashed var(--garis);margin:9px 0}
+.qr{width:78px;height:78px;flex:none}
+.jadwal{display:grid;grid-template-columns:auto 1fr;gap:0 12px}
+.jadwal .n{width:23px;height:23px;border-radius:50%;background:var(--tanah);color:#fff;font-size:12px;display:grid;place-items:center;font-weight:600}
+.jadwal .txt{padding-bottom:13px}
+
+input[type=range]{width:100%;accent-color:var(--daun)}
+.toast{position:fixed;right:18px;bottom:18px;background:var(--tanah);color:#fff;padding:11px 16px;border-radius:var(--r);font-size:13.5px;z-index:60;box-shadow:0 6px 20px rgba(20,15,5,.25);max-width:330px}
+.hide{display:none!important}
+.foot{font-size:11.5px;color:var(--tanah-2);padding:6px 2px 30px;line-height:1.55;max-width:78ch}
+
+@media (max-width:900px){
+  .app{grid-template-columns:1fr}
+  .rail{position:fixed;bottom:0;top:auto;height:auto;width:100%;flex-direction:row;z-index:50;padding:5px 4px;gap:0;overflow-x:auto}
+  .mark{display:none}
+  .railfoot{display:none}
+  .navbtn{flex-direction:column;align-items:center;gap:2px;font-size:10.5px;text-align:center;padding:6px 4px}
+  .navbtn small{display:none}
+  .view{padding:14px;padding-bottom:82px}
+  .topbar{padding:8px 14px}
+  .mapwrap,.split{grid-template-columns:1fr}
+  .mapbox{border-right:none;border-bottom:1px solid var(--garis-2)}
+  .swap{grid-template-columns:1fr auto}
+  .kpi{border-right:none;border-bottom:1px solid var(--garis-2)}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+
+<div class="app">
+  <nav class="rail" id="rail">
+    <div class="mark"><b>PETAK</b><span>Kuota hara pupuk bersubsidi</span></div>
+  </nav>
+  <div class="main">
+    <div class="topbar">
+      <span class="ctx">Desa <b>Sukamaju</b>, Rawamerta, Karawang</span>
+      <span class="ctx">Musim <b id="musimLbl">MT-1 2027</b></span>
+      <span class="spacer"></span>
+      <select class="pill" id="peran" aria-label="Peran pengguna">
+        <option value="kios">Petugas kios — Kios Tani Makmur</option>
+        <option value="penyuluh">Penyuluh — BPP Rawamerta</option>
+        <option value="pusat">Analis — Ditjen PSP Kementan</option>
+      </select>
+      <span class="pill" id="jam" style="display:inline-flex;align-items:center;gap:6px"><span class="dot" style="background:var(--daun)"></span>Tersambung i-Pubers</span>
+    </div>
+    <div class="view" id="view"></div>
+  </div>
+</div>
+<div id="toast"></div>
+
+<script>
+/* =========================================================
+   PETAK — purwarupa fungsional
+   Lapisan penghubung di atas e-RDKK & i-Pubers
+   ========================================================= */
+
+/* ---------- utilitas ---------- */
+const $=(s,r=document)=>r.querySelector(s);
+const rp=n=>'Rp'+Math.round(n).toLocaleString('id-ID');
+const rpJt=n=>n>=1e9?'Rp'+(n/1e9).toFixed(2).replace('.',',')+' M':n>=1e6?'Rp'+(n/1e6).toFixed(1).replace('.',',')+' jt':rp(n);
+const kg=n=>Math.round(n).toLocaleString('id-ID')+' kg';
+const pct=n=>(Math.round(n*10)/10).toLocaleString('id-ID')+'%';
+const num=(n,d=1)=>n.toLocaleString('id-ID',{minimumFractionDigits:d,maximumFractionDigits:d});
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const r5=v=>Math.round(v/5)*5;
+function rng(seed){return function(){seed|=0;seed=seed+0x6D2B79F5|0;let t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+function toast(msg){const t=$('#toast');t.innerHTML='<div class="toast">'+msg+'</div>';clearTimeout(t._h);t._h=setTimeout(()=>t.innerHTML='',3800)}
+
+/* ---------- parameter kebijakan (dapat ditelusuri) ---------- */
+const PUPUK={
+  urea:{nama:'Urea',het:2250,pokok:7150,N:.46,P:0,K:0},
+  npk :{nama:'NPK Phonska 15-15-15',het:2300,pokok:7450,N:.15,P:.15,K:.15},
+  npkfk:{nama:'NPK Formula Khusus 15-10-12',het:3300,pokok:8800,N:.15,P:.10,K:.12},
+  organik:{nama:'Pupuk organik',het:800,pokok:2400,N:.01,P:.005,K:.01}
+};
+Object.values(PUPUK).forEach(p=>p.subsidi=p.pokok-p.het);   // nilai subsidi ditanggung negara per kg
+const KUOTA_HA={urea:250,npk:300,npkfk:0,organik:0};        // komposisi kaku e-RDKK saat ini
+const HARGA_GKP=6500;                                        // Rp/kg gabah kering panen
+const BATAS_TUKAR=.40;                                       // maks 40% nilai subsidi boleh berpindah jenis
+const KELEBIHAN_MAKS=1.15;                                   // maks 115% dari anjuran per jenis
+
+/* ---------- mesin TAKAR: status hara -> kebutuhan hara -> takaran ---------- */
+const KEB_N={rendah:135,sedang:115,tinggi:95};
+const KEB_P={rendah:36,sedang:27,tinggi:18};
+const KEB_K={rendah:60,sedang:40,tinggi:20};
+
+function takar(p){
+  const t=p.target/6.5;
+  let needN=KEB_N[p.sN]*t + (p.bo<2?12:p.bo>3?-12:0);
+  let needP=KEB_P[p.sP]*t, needK=KEB_K[p.sK]*t;
+  if(p.ph<5.2) needP*=1.15;                                  // fiksasi P pada tanah masam
+  let npk=clamp(r5(needP/PUPUK.npk.P),75,300);
+  const kDariNpk=npk*PUPUK.npk.K;
+  const kurangK=Math.max(0,needK-kDariNpk);
+  let organik=kurangK>15?500:(p.bo<2?500:250);
+  let urea=clamp(r5((needN-npk*PUPUK.npk.N-organik*PUPUK.organik.N)/PUPUK.urea.N),50,350);
+  const per={urea,npk,npkfk:0,organik};
+  const tot={}; for(const k in per) tot[k]=r5(per[k]*p.luas);
+  return {per,tot,needN,needP,needK,kurangK};
+}
+function kuotaPetak(p){const o={};for(const k in KUOTA_HA)o[k]=r5(KUOTA_HA[k]*p.luas);return o}
+function nilaiSubsidi(o){let s=0;for(const k in o)s+=(o[k]||0)*PUPUK[k].subsidi;return s}
+function hetTotal(o){let s=0;for(const k in o)s+=(o[k]||0)*PUPUK[k].het;return s}
+
+/* keselarasan 0–100: seberapa dekat rencana tebus dengan anjuran hara */
+function keselarasan(rencana,anjuran){
+  const w={urea:.4,npk:.4,npkfk:.1,organik:.1};let skor=0,bobot=0;
+  for(const k in w){
+    const a=anjuran[k]||0, r=rencana[k]||0;
+    if(a===0&&r===0) continue;
+    const base=Math.max(a,1);
+    skor+=w[k]*clamp(1-Math.abs(r-a)/base,0,1); bobot+=w[k];
+  }
+  return bobot?100*skor/bobot:100;
+}
+/* dampak hasil: selisih keselarasan diterjemahkan ke tambahan hasil, dibatasi 21,4% (uji lapang LKP) */
+function dampakHasil(p,sBaru){
+  const naik=clamp((sBaru-p.selarasLalu)/100,-0.6,1)*0.214;
+  const tonHa=p.hasilLalu*(1+naik);
+  return {naikPct:naik*100, tonHa, deltaTon:(tonHa-p.hasilLalu)*p.luas, deltaRp:(tonHa-p.hasilLalu)*p.luas*1000*HARGA_GKP};
+}
+
+/* ---------- data desa: 48 petak, 14 petani ---------- */
+const NAMA=['Sarmin','Wagiyem','Rohman Hidayat','Titin Suryani','Dulmanan','Karyo Sutejo','Nyimas Aisyah','Endang Supriatna','Jumadi','Rosmiati','Tarjo','Nining Kurnia','Solikin','Mardiah'];
+const DUSUN=['Krajan','Pasir Kadu','Ciwaru','Bojong'];
+function bangunData(){
+  const R=rng(20270114), petak=[], petani=[];
+  NAMA.forEach((n,i)=>petani.push({id:i,nama:n,nik:'321504'+String(70+i).padStart(4,'0')+String(1900+Math.floor(R()*99)).slice(0,4),kk:'Poktan '+['Sri Rejeki','Tani Maju','Sumber Urip','Mekar Sari'][i%4]}));
+  const kolom=8,baris=6;
+  // simpul kisi dengan jitter -> petak sawah tak beraturan namun bersambung
+  const V=[];for(let y=0;y<=baris;y++){V[y]=[];for(let x=0;x<=kolom;x++){
+    const tepi=(x===0||y===0||x===kolom||y===baris);
+    V[y][x]={x:x*86+(tepi?0:(R()-.5)*26),y:y*70+(tepi?0:(R()-.5)*22)};}}
+  let id=0;
+  for(let y=0;y<baris;y++)for(let x=0;x<kolom;x++){
+    id++;
+    const sN=R()<.52?'rendah':R()<.75?'sedang':'tinggi';
+    const sP=R()<.24?'rendah':R()<.6?'sedang':'tinggi';
+    const sK=R()<.38?'rendah':R()<.72?'sedang':'tinggi';
+    const src=R()<.34?'PUTS':R()<.8?'Satelit':'Riwayat';
+    const p={
+      id:'32.15.07.2001-'+String(id).padStart(3,'0'),
+      idx:id-1, poly:[V[y][x],V[y][x+1],V[y+1][x+1],V[y+1][x]].map(v=>[v.x,v.y]),
+      dusun:DUSUN[Math.floor(y/1.6)%4],
+      pemilik:petani[(x*3+y*5)%petani.length],
+      luas:Math.round((.22+R()*1.05)*100)/100,
+      sN,sP,sK, ph:Math.round((4.8+R()*1.7)*10)/10, bo:Math.round((1.2+R()*2.6)*10)/10,
+      ndvi:Math.round((.38+R()*.46)*100)/100,
+      sumber:src, yakin:src==='PUTS'?'tinggi':src==='Satelit'?(R()<.7?'sedang':'rendah'):'rendah',
+      target:Math.round((5.8+R()*1.6)*10)/10,
+      hasilLalu:Math.round((4.6+R()*1.7)*10)/10,
+      tanam:['2027-01-06','2027-01-11','2027-01-14','2027-01-19'][Math.floor(R()*4)],
+      tebusLalu:null, selarasLalu:0, transaksi:null
+    };
+    // realisasi tebusan musim lalu: sebagian besar mengikuti kuota kaku + deviasi kebiasaan
+    const kk=kuotaPetak(p);
+    p.tebusLalu={urea:r5(kk.urea*(.85+R()*.5)),npk:r5(kk.npk*(.6+R()*.45)),npkfk:0,organik:R()<.15?r5(80*p.luas):0};
+    p.selarasLalu=Math.round(keselarasan(p.tebusLalu,takar(p).tot));
+    petak.push(p);
+  }
+  return {petak,petani};
+}
+const DB=bangunData();
+
+/* ---------- keadaan aplikasi ---------- */
+const S={
+  tab:'peta', layer:'sN', sel:DB.petak[19].id, peran:'kios',
+  trxPetak:null, rencana:null, riwayatTrx:[], sesiMulai:Date.now(),
+  simCakupan:60, simPatuh:70
+};
+const getPetak=id=>DB.petak.find(p=>p.id===id);
+
+/* ---------- warna lapisan peta ---------- */
+const SKALA={
+  sN:{rendah:'#C9E0CE',sedang:'#78B08B',tinggi:'#2E6B41'},
+  sP:{rendah:'#F2E0BE',sedang:'#D4A64F',tinggi:'#9C6A1E'},
+  sK:{rendah:'#DCD9EC',sedang:'#9C96C4',tinggi:'#5B5590'}
+};
+function warnaPetak(p){
+  if(S.layer==='ndvi'){const t=clamp((p.ndvi-.35)/.5,0,1);
+    const c=[[233,226,196],[46,107,65]];return 'rgb('+c[0].map((v,i)=>Math.round(v+(c[1][i]-v)*t)).join(',')+')';}
+  if(S.layer==='yakin')return p.yakin==='tinggi'?'#2E6B41':p.yakin==='sedang'?'#B9C9A8':'#E6D5CE';
+  if(S.layer==='selaras'){const t=clamp(p.selarasLalu/100,0,1);
+    return 'rgb('+[158,59,38].map((v,i)=>Math.round(v+([46,107,65][i]-v)*t)).join(',')+')';}
+  return SKALA[S.layer][p[S.layer]];
+}
+
+/* =========================================================
+   NAVIGASI
+   ========================================================= */
+const TABS=[
+  {id:'peta',ikon:'▦',nama:'Peta hara',ket:'Status N, P, K per petak'},
+  {id:'takar',ikon:'⚖',nama:'Takaran',ket:'Anjuran spesifik petak'},
+  {id:'tebus',ikon:'⌦',nama:'Penebusan',ket:'Kuota, tukar jenis, struk'},
+  {id:'pantau',ikon:'◫',nama:'Pantau',ket:'Kesenjangan & koreksi'},
+  {id:'simulasi',ikon:'∿',nama:'Simulasi',ket:'Proyeksi nasional'}
+];
+function gambarRail(){
+  const r=$('#rail');
+  [...r.querySelectorAll('.navbtn,.railfoot')].forEach(e=>e.remove());
+  TABS.forEach(t=>{
+    const b=document.createElement('button');
+    b.className='navbtn'; b.setAttribute('aria-current',S.tab===t.id);
+    b.innerHTML='<i>'+t.ikon+'</i><span>'+t.nama+'<small>'+t.ket+'</small></span>';
+    b.onclick=()=>{S.tab=t.id;gambarRail();render();window.scrollTo(0,0)};
+    r.appendChild(b);
+  });
+  const f=document.createElement('div');f.className='railfoot';
+  f.innerHTML='Terhubung: e-RDKK 2027 · i-Pubers<br>Purwarupa — data desa disimulasikan';
+  r.appendChild(f);
+}
+
+/* =========================================================
+   LAYAR 1 — PETA HARA
+   ========================================================= */
+function layarPeta(){
+  const p=getPetak(S.sel), t=takar(p), q=kuotaPetak(p);
+  const lapisan=[['sN','Nitrogen'],['sP','Fosfor'],['sK','Kalium'],['ndvi','Kehijauan tajuk'],['yakin','Keyakinan data'],['selaras','Keselarasan musim lalu']];
+  const w=8*86,h=6*70;
+  const poly=DB.petak.map(x=>{
+    const d=x.poly.map(c=>c.join(',')).join(' ');
+    return '<polygon class="petak'+(x.id===S.sel?' sel':'')+'" points="'+d+'" fill="'+warnaPetak(x)+'" data-id="'+x.id+'" style="animation:masuk .5s ease '+(x.idx*7)+'ms both"><title>'+x.id+' — '+x.pemilik.nama+'</title></polygon>';
+  }).join('');
+  const label=DB.petak.filter(x=>x.luas>.8).map(x=>{
+    const cx=x.poly.reduce((a,c)=>a+c[0],0)/4, cy=x.poly.reduce((a,c)=>a+c[1],0)/4;
+    return '<text x="'+cx+'" y="'+(cy+4)+'" text-anchor="middle" font-size="11" fill="rgba(35,28,18,.55)" font-family="Archivo" pointer-events="none">'+x.id.slice(-3)+'</text>';
+  }).join('');
+  const legenda=S.layer==='ndvi'?['Tajuk jarang','','Tajuk rapat'].map((l,i)=>l?'<div class="legrow"><span class="legsw" style="background:'+(i?'#2E6B41':'#E9E2C4')+'"></span>'+l+'</div>':'').join('')
+    :S.layer==='yakin'?[['#2E6B41','Uji tanah langsung'],['#B9C9A8','Dugaan satelit'],['#E6D5CE','Riwayat saja']].map(x=>'<div class="legrow"><span class="legsw" style="background:'+x[0]+'"></span>'+x[1]+'</div>').join('')
+    :S.layer==='selaras'?[['#2E6B41','Tebusan mendekati anjuran'],['#9E3B26','Tebusan jauh dari anjuran']].map(x=>'<div class="legrow"><span class="legsw" style="background:'+x[0]+'"></span>'+x[1]+'</div>').join('')
+    :['rendah','sedang','tinggi'].map(s=>'<div class="legrow"><span class="legsw" style="background:'+SKALA[S.layer][s]+'"></span>Status '+s+'</div>').join('');
+
+  const rekapYakin=['tinggi','sedang','rendah'].map(y=>DB.petak.filter(x=>x.yakin===y).length);
+  const luasTot=DB.petak.reduce((a,x)=>a+x.luas,0);
+
+  return `
+  <div class="grid" style="grid-template-columns:1fr;gap:14px">
+    <div>
+      <h2>Peta hara Desa Sukamaju</h2>
+      <p class="sub">${DB.petak.length} petak, ${num(luasTot,1)} ha. Status hara disusun dari uji tanah penyuluh, citra satelit, dan riwayat tiga musim penebusan di i-Pubers — tanpa uji laboratorium per petak.</p>
+    </div>
+    <div class="panel">
+      <div class="hd">
+        <h3>Lapisan</h3>
+        <div class="layers">${lapisan.map(l=>'<button class="tab" data-layer="'+l[0]+'" aria-pressed="'+(S.layer===l[0])+'">'+l[1]+'</button>').join('')}</div>
+      </div>
+      <div class="mapwrap">
+        <div class="mapbox">
+          <svg class="field" viewBox="-8 -8 ${w+16} ${h+16}" id="svgfield" role="img" aria-label="Peta petak sawah">
+            ${poly}${label}
+            <path d="M -8 ${h*0.51} H ${w+8}" stroke="#7FA3C4" stroke-width="6" opacity=".55" fill="none"/>
+            <text x="6" y="${h*0.51-9}" font-size="10.5" fill="#4E7A9E" font-family="Archivo">Saluran irigasi sekunder</text>
+          </svg>
+          <div class="legend"><b>${lapisan.find(l=>l[0]===S.layer)[1]}</b>${legenda}</div>
+        </div>
+        <div class="detail" id="detail">${detailPetak(p,t,q)}</div>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="hd"><h3>Mutu data peta</h3><span class="mut" style="font-size:12.5px">Anjuran berkeyakinan rendah ditandai di layar kios dan diprioritaskan untuk kunjungan penyuluh</span></div>
+      <div class="grid" style="grid-template-columns:repeat(3,1fr);gap:0">
+        <div class="kpi"><div class="lbl">Uji tanah langsung (PUTS)</div><div class="big">${rekapYakin[0]}<small> petak</small></div><div class="bar" style="margin-top:8px"><i style="width:${rekapYakin[0]/48*100}%"></i></div></div>
+        <div class="kpi"><div class="lbl">Dugaan satelit multispektral</div><div class="big">${rekapYakin[1]}<small> petak</small></div><div class="bar" style="margin-top:8px"><i style="width:${rekapYakin[1]/48*100}%"></i></div></div>
+        <div class="kpi"><div class="lbl">Riwayat tebusan saja</div><div class="big">${rekapYakin[2]}<small> petak</small></div><div class="bar" style="margin-top:8px"><i style="width:${rekapYakin[2]/48*100}%;background:var(--karat)"></i></div></div>
+      </div>
+    </div>
+    <div class="foot">Sumber parameter: status hara N, P, K mengikuti kelas Perangkat Uji Tanah Sawah; kehijauan tajuk diturunkan dari indeks vegetasi citra satelit resolusi menengah yang tersedia bebas biaya. Nilai pada purwarupa ini disimulasikan untuk keperluan peragaan.</div>
+  </div>`;
+}
+
+function detailPetak(p,t,q){
+  const sel=keselarasan(p.tebusLalu,t.tot);
+  const badge=s=>'<span class="chip '+p[s]+'">'+p[s]+'</span>';
+  return `
+  <div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:10px">
+    <div style="flex:1"><h3>${p.id}</h3><div class="sub">${p.pemilik.nama} · ${p.pemilik.kk} · Dusun ${p.dusun}</div></div>
+    <span class="chip ${p.yakin}">keyakinan ${p.yakin}</span>
+  </div>
+  <div class="kv"><span>Luas garapan</span><b>${num(p.luas,2)} ha</b></div>
+  <div class="kv"><span>Nitrogen</span>${badge('sN')}</div>
+  <div class="kv"><span>Fosfor</span>${badge('sP')}</div>
+  <div class="kv"><span>Kalium</span>${badge('sK')}</div>
+  <div class="kv"><span>pH tanah</span><b>${num(p.ph,1)}</b></div>
+  <div class="kv"><span>Bahan organik</span><b>${num(p.bo,1)}%</b></div>
+  <div class="kv"><span>Sumber data</span><b>${p.sumber}</b></div>
+  <div class="kv"><span>Hasil musim lalu</span><b>${num(p.hasilLalu,1)} t/ha</b></div>
+  <div class="kv"><span>Target musim ini</span><b>${num(p.target,1)} t/ha</b></div>
+  <div style="margin:14px 0 8px"><h3>Anjuran PETAK musim ini</h3></div>
+  <div class="kv"><span>Urea</span><b>${kg(t.tot.urea)}</b></div>
+  <div class="kv"><span>NPK Phonska</span><b>${kg(t.tot.npk)}</b></div>
+  <div class="kv"><span>Organik</span><b>${kg(t.tot.organik)}</b></div>
+  <div class="note" style="margin:12px 0 10px">Kuota e-RDKK petak ini: ${kg(q.urea)} urea dan ${kg(q.npk)} NPK — disusun dari luas lahan, bukan dari status hara.</div>
+  <div class="kv"><span>Keselarasan tebusan musim lalu</span><b style="color:${sel<60?'var(--karat)':'var(--daun)'}">${Math.round(sel)}/100</b></div>
+  <button class="btn sm" style="margin-top:12px;width:100%" data-goto="takar" data-id="${p.id}">Buka rincian takaran</button>
+  <button class="btn ghost sm" style="margin-top:7px;width:100%" data-goto="tebus" data-id="${p.id}">Mulai penebusan petak ini</button>`;
+}
+
+/* =========================================================
+   LAYAR 2 — TAKARAN
+   ========================================================= */
+function layarTakar(){
+  const p=getPetak(S.sel), t=takar(p), q=kuotaPetak(p);
+  const selAnjuran=100, selKuota=keselarasan(q,t.tot);
+  const dAnjuran=dampakHasil(p,selAnjuran), dKuota=dampakHasil(p,selKuota);
+  const baris=[['urea','Urea'],['npk','NPK Phonska'],['organik','Pupuk organik']].map(([k,n])=>{
+    const a=t.tot[k], b=q[k]||0, d=a-b;
+    return `<tr><td>${n}<div class="sub">${num(t.per[k],0)} kg/ha</div></td>
+      <td class="num">${kg(b)}</td><td class="num"><b>${kg(a)}</b></td>
+      <td class="num" style="color:${d>0?'var(--karat)':d<0?'var(--daun)':'inherit'}">${d>0?'+':''}${num(d,0)} kg</td>
+      <td class="num">${rp(Math.abs(d)*PUPUK[k].subsidi)}</td></tr>`}).join('');
+  const selisihNilai=nilaiSubsidi(t.tot)-nilaiSubsidi(q);
+  const jadwal=jadwalPemupukan(p,t.tot);
+
+  const opsiPetak=DB.petak.map(x=>'<option value="'+x.id+'"'+(x.id===S.sel?' selected':'')+'>'+x.id+' — '+x.pemilik.nama+' ('+num(x.luas,2)+' ha)</option>').join('');
+  return `
+  <div class="grid" style="gap:14px">
+    <div style="display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap">
+      <div style="flex:1;min-width:240px"><h2>Takaran spesifik petak</h2>
+      <p class="sub">Mesin takar menjalankan logika Layanan Konsultasi Padi secara otomatis memakai data peta hara, tanpa kuesioner yang harus diisi petani.</p></div>
+      <select class="pill" id="pilihPetak" style="padding:6px 10px;max-width:100%">${opsiPetak}</select>
+    </div>
+
+    <div class="panel">
+      <div class="hd"><h3>Dari status hara ke kilogram pupuk</h3><span class="chip ${p.yakin}">keyakinan ${p.yakin}</span></div>
+      <div class="pad" style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px">
+        ${[['N',t.needN,p.sN,'var(--n)','Nitrogen'],['P₂O₅',t.needP,p.sP,'var(--p)','Fosfor'],['K₂O',t.needK,p.sK,'var(--k)','Kalium']].map(x=>`
+          <div>
+            <div class="lbl sub" style="display:flex;align-items:center;gap:6px"><span class="dot" style="background:${x[3]}"></span>${x[4]} — status ${x[2]}</div>
+            <div class="big">${num(x[1],0)}<small> kg ${x[0]}/ha</small></div>
+          </div>`).join('')}
+      </div>
+      <div class="pad" style="border-top:1px solid var(--garis-2);padding-top:0">
+        <table>
+          <tr><th>Jenis pupuk</th><th class="num">Kuota e-RDKK</th><th class="num">Anjuran PETAK</th><th class="num">Selisih</th><th class="num">Nilai subsidi selisih</th></tr>
+          ${baris}
+        </table>
+      </div>
+      <div class="pad" style="border-top:1px solid var(--garis-2)">
+        <div class="note ${selisihNilai<=0?'':'warn'}">${selisihNilai<=0
+          ? 'Anjuran petak ini <b>'+rp(-selisihNilai)+' lebih murah</b> bagi negara daripada kuota kaku, karena '+(p.sP==='tinggi'?'fosfor tanah sudah tinggi':'sebagian hara tidak dibutuhkan tanaman')+'. Selisih itulah yang dibuka untuk ditukar ke jenis lain pada layar penebusan.'
+          : 'Anjuran petak ini menuntut <b>'+rp(selisihNilai)+' di atas nilai kuota</b>. PETAK tidak menambah anggaran: kelebihan ditutup dengan penukaran dari jenis yang berlebih atau pembelian nonsubsidi, dan petak ini masuk daftar usulan koreksi alokasi e-RDKK.'}</div>
+      </div>
+    </div>
+
+    <div class="split">
+      <div class="panel">
+        <div class="hd"><h3>Jadwal pemberian</h3><span class="mut" style="font-size:12.5px">tanam ${new Date(p.tanam).toLocaleDateString('id-ID',{day:'numeric',month:'long'})}</span></div>
+        <div class="pad"><div class="jadwal">${jadwal.map((j,i)=>`
+          <div class="n">${i+1}</div>
+          <div class="txt"><b>${j.fase}</b><div class="sub">${j.tgl} · ${j.hst} hari setelah tanam</div>
+          <div style="margin-top:4px">${j.isi}</div></div>
+          `).join('')}</div></div>
+      </div>
+      <div class="panel">
+        <div class="hd"><h3>Dampak bila anjuran diikuti</h3></div>
+        <div class="pad">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:12px">
+            <div><div class="sub">Menebus sesuai kuota kaku</div><div class="big">${num(dKuota.tonHa,2)}<small> t/ha</small></div><div class="sub">keselarasan ${Math.round(selKuota)}/100</div></div>
+            <div><div class="sub">Menebus sesuai anjuran PETAK</div><div class="big" style="color:var(--daun)">${num(dAnjuran.tonHa,2)}<small> t/ha</small></div><div class="sub">keselarasan 100/100</div></div>
+          </div>
+          <div class="note gold">Tambahan hasil petak ini <b>${num(dAnjuran.deltaTon-dKuota.deltaTon,2)} ton</b> gabah, setara <b>${rp((dAnjuran.deltaRp-dKuota.deltaRp))}</b> pendapatan bagi ${p.pemilik.nama.split(' ')[0]} pada satu musim.</div>
+          <p class="sub" style="margin-top:10px">Model dampak dibatasi pada kenaikan 21,4 persen, yaitu angka tertinggi yang terbukti pada uji lapang pemupukan spesifik lokasi, dan diskalakan menurut perbaikan keselarasan terhadap kebiasaan petak ini.</p>
+          <button class="btn" data-goto="tebus" data-id="${p.id}" style="width:100%;margin-top:6px">Lanjut ke penebusan</button>
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+function jadwalPemupukan(p,tot){
+  const d0=new Date(p.tanam);
+  const f=(hst)=>{const d=new Date(d0.getTime()+hst*864e5);return d.toLocaleDateString('id-ID',{day:'numeric',month:'short',year:'numeric'})};
+  const isi=(u,n,o)=>[o?kg(o)+' organik':'',n?kg(n)+' NPK':'',u?kg(u)+' urea':''].filter(Boolean).join(' + ');
+  return [
+    {fase:'Sebelum tanam',hst:'0',tgl:f(-3),isi:isi(0,0,tot.organik)},
+    {fase:'Pemupukan dasar',hst:'7–10',tgl:f(8),isi:isi(r5(tot.urea*.25),r5(tot.npk*.6),0)},
+    {fase:'Anakan aktif',hst:'21',tgl:f(21),isi:isi(r5(tot.urea*.45),r5(tot.npk*.4),0)},
+    {fase:'Primordia bunga',hst:'38',tgl:f(38),isi:isi(tot.urea-r5(tot.urea*.25)-r5(tot.urea*.45),0,0)}
+  ];
+}
+
+/* =========================================================
+   LAYAR 3 — PENEBUSAN (modul SAMBUNG)
+   ========================================================= */
+function mulaiTrx(id){
+  const p=getPetak(id); S.trxPetak=id;
+  const t=takar(p);
+  S.rencana={urea:t.tot.urea,npk:t.tot.npk,npkfk:0,organik:t.tot.organik};
+  S.strukTampil=false;
+}
+function layarTebus(){
+  if(!S.trxPetak) return layarPilihPetani();
+  const p=getPetak(S.trxPetak), t=takar(p), q=kuotaPetak(p);
+  const poinKuota=nilaiSubsidi(q), poinRencana=nilaiSubsidi(S.rencana);
+  const sisa=poinKuota-poinRencana, pakai=clamp(poinRencana/poinKuota*100,0,140);
+  const dipindah=Object.keys(PUPUK).reduce((a,k)=>a+Math.max(0,((S.rencana[k]||0)-(q[k]||0))*PUPUK[k].subsidi),0);
+  const batas=poinKuota*BATAS_TUKAR;
+  const sel=keselarasan(S.rencana,t.tot), d=dampakHasil(p,sel);
+  const bayar=hetTotal(S.rencana);
+
+  const pelanggaran=[];
+  if(poinRencana>poinKuota+1) pelanggaran.push('Nilai subsidi melampaui kuota sebesar '+rp(poinRencana-poinKuota)+'. Kurangi salah satu jenis.');
+  if(dipindah>batas+1) pelanggaran.push('Penukaran antar jenis '+rp(dipindah)+' melebihi batas '+pct(BATAS_TUKAR*100)+' nilai kuota per musim ('+rp(batas)+').');
+  for(const k in PUPUK){const a=t.tot[k]||0,r=S.rencana[k]||0;
+    if(r>Math.max(a*KELEBIHAN_MAKS,a+10)&&r>0) pelanggaran.push(PUPUK[k].nama+' melebihi 115% anjuran hara. Kelebihan hara tidak diserap tanaman.');}
+
+  const barisTukar=Object.entries(PUPUK).map(([k,inf])=>{
+    const a=t.tot[k]||0, kk=q[k]||0, v=S.rencana[k]||0;
+    const lebih=v>Math.max(a*KELEBIHAN_MAKS,a+10)&&v>0;
+    return `<div class="swap">
+      <div>
+        <b>${inf.nama}</b>
+        <div class="sub">Kuota ${kg(kk)} · anjuran hara <b style="color:var(--daun)">${kg(a)}</b> · subsidi ${rp(inf.subsidi)}/kg</div>
+      </div>
+      <div class="stepper" role="group" aria-label="${inf.nama}">
+        <button data-step="${k}|-25" aria-label="kurangi">−</button>
+        <input type="number" value="${v}" step="5" min="0" data-inp="${k}" aria-label="kilogram ${inf.nama}">
+        <button data-step="${k}|25" aria-label="tambah">+</button>
+      </div>
+      <div class="num" style="min-width:96px;font-size:13px">${rp(v*inf.subsidi)}<div class="sub">nilai subsidi</div></div>
+      <div class="num" style="min-width:72px">${lebih?'<span class="chip rendah">berlebih</span>':v===0&&a>0?'<span class="chip sedang">kosong</span>':'<span class="chip tinggi">aman</span>'}</div>
+    </div>`}).join('');
+
+  return `
+  <div class="grid" style="gap:14px">
+    <div style="display:flex;gap:12px;align-items:flex-start;flex-wrap:wrap">
+      <div style="flex:1;min-width:250px">
+        <h2>Penebusan ${p.id}</h2>
+        <p class="sub">${p.pemilik.nama} · NIK ${p.pemilik.nik} · ${p.pemilik.kk} · ${num(p.luas,2)} ha · Kios Tani Makmur</p>
+      </div>
+      <button class="btn ghost sm" id="batalTrx">Ganti petani</button>
+    </div>
+
+    ${p.yakin==='rendah'?'<div class="note warn">Data hara petak ini hanya bersumber dari riwayat tebusan, sehingga anjuran berkeyakinan rendah. Sampaikan kepada petani bahwa angka ini masih perlu dipastikan, dan petak sudah masuk antrean uji tanah penyuluh.</div>':''}
+
+    <div class="panel">
+      <div class="hd">
+        <h3>Kuota sebagai nilai subsidi, bukan sebagai karung</h3>
+        <span class="mut" style="font-size:12.5px">Total yang ditanggung negara untuk petak ini: ${rp(poinKuota)}</span>
+      </div>
+      <div class="pad">
+        <div class="meterlbl"><b>${rp(poinRencana)} terpakai dari ${rp(poinKuota)}</b><span class="mut">${Math.round(pakai)}% pagu petak</span></div>
+        <div class="meter" style="margin-bottom:6px"><i class="${poinRencana>poinKuota?'over':''}" style="width:${clamp(pakai,0,100)}%"></i></div>
+        <div style="display:flex;justify-content:space-between;font-size:12.5px" class="mut">
+          <span>Sisa nilai subsidi ${sisa>=0?rp(sisa):'<b style="color:var(--karat)">kurang '+rp(-sisa)+'</b>'}</span>
+          <span>Ditukar antar jenis ${rp(dipindah)} dari batas ${rp(batas)}</span>
+        </div>
+        <div style="margin-top:14px">${barisTukar}</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px">
+          <button class="btn sm" id="pakaiAnjuran">Terapkan anjuran PETAK</button>
+          <button class="btn ghost sm" id="pakaiKuota">Ambil kuota apa adanya</button>
+          <button class="btn ghost sm" id="habiskan">Habiskan sisa nilai subsidi</button>
+        </div>
+      </div>
+    </div>
+
+    ${pelanggaran.length?'<div class="note warn">'+pelanggaran.map(x=>'<div>'+x+'</div>').join('')+'</div>':''}
+
+    <div class="split">
+      <div class="panel">
+        <div class="hd"><h3>Yang dibaca petani di layar kios</h3></div>
+        <div class="pad">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+            <div><div class="sub">Keselarasan dengan kebutuhan hara</div><div class="big" style="color:${sel>=85?'var(--daun)':sel>=65?'var(--gabah)':'var(--karat)'}">${Math.round(sel)}<small>/100</small></div>
+              <div class="bar" style="margin-top:8px"><i style="width:${sel}%;background:${sel>=85?'var(--daun)':sel>=65?'var(--gabah)':'var(--karat)'}"></i></div></div>
+            <div><div class="sub">Dibayar petani hari ini</div><div class="big">${rp(bayar)}</div><div class="sub">harga eceran tertinggi</div></div>
+          </div>
+          <div class="note gold" style="margin-top:14px">Perkiraan hasil ${num(d.tonHa,2)} t/ha, ${d.naikPct>=0?'naik':'turun'} ${pct(Math.abs(d.naikPct))} dari musim lalu. Tambahan gabah ${num(Math.abs(d.deltaTon),2)} ton atau ${rp(Math.abs(d.deltaRp))} untuk ${num(p.luas,2)} ha.</div>
+          <div style="margin-top:12px">
+            <button class="btn" id="sahkan" style="width:100%" ${pelanggaran.length?'disabled':''}>Sahkan penebusan</button>
+            ${pelanggaran.length?'<p class="sub" style="margin-top:6px">Perbaiki peringatan di atas sebelum transaksi disahkan ke i-Pubers.</p>':''}
+          </div>
+        </div>
+      </div>
+      <div class="panel" id="strukPanel">
+        <div class="hd"><h3>Struk penebusan</h3></div>
+        <div class="pad" id="strukIsi">${p.transaksi?struk(p):'<p class="mut">Struk terbit setelah penebusan disahkan. Lembar ini memuat takaran, jadwal pemberian tiga tahap, dan bukti nilai subsidi yang dipakai.</p>'}</div>
+      </div>
+    </div>
+
+    <div class="foot">Nilai subsidi per kilogram dihitung dari selisih harga pokok penyediaan dan harga eceran tertinggi pupuk bersubsidi. Penukaran jenis pupuk hanya diizinkan pada nilai subsidi setara, sehingga tidak ada tambahan rupiah anggaran negara pada setiap transaksi.</div>
+  </div>`;
+}
+
+function layarPilihPetani(){
+  const rows=DB.petani.map(t=>{
+    const pk=DB.petak.filter(x=>x.pemilik.id===t.id);
+    const luas=pk.reduce((a,x)=>a+x.luas,0);
+    const sudah=pk.filter(x=>x.transaksi).length;
+    return `<tr><td><b>${t.nama}</b><div class="sub">${t.kk}</div></td>
+      <td class="mut">${t.nik}</td><td class="num">${pk.length}</td><td class="num">${num(luas,2)} ha</td>
+      <td class="num">${sudah?'<span class="chip tinggi">'+sudah+' petak ditebus</span>':'<span class="chip">belum menebus</span>'}</td>
+      <td class="num">${pk.map(x=>'<button class="btn ghost sm" data-trx="'+x.id+'" style="margin:2px">'+x.id.slice(-3)+'</button>').join('')}</td></tr>`}).join('');
+  return `
+  <div class="grid" style="gap:14px">
+    <div><h2>Mulai penebusan</h2><p class="sub">Pindai Nomor Induk Kependudukan petani, atau pilih dari daftar penerima e-RDKK yang terdaftar di kios ini. Pilih nomor petak untuk membuka transaksi.</p></div>
+    <div class="panel">
+      <div class="hd"><h3>Pindai kartu</h3></div>
+      <div class="pad" style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+        <input class="pill" id="nikInput" placeholder="Ketik NIK, contoh ${DB.petani[3].nik}" style="flex:1;min-width:240px;padding:8px 12px">
+        <button class="btn" id="cariNik">Cari petani</button>
+        <button class="btn ghost" id="acakNik">Pindai kartu petani</button>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="hd"><h3>Penerima terdaftar di Kios Tani Makmur</h3><span class="mut" style="font-size:12.5px">${DB.petani.length} petani · ${DB.petak.length} petak</span></div>
+      <div style="overflow:auto"><table>
+        <tr><th>Nama</th><th>NIK</th><th class="num">Petak</th><th class="num">Luas</th><th class="num">Status musim ini</th><th class="num">Buka petak</th></tr>
+        ${rows}
+      </table></div>
+    </div>
+  </div>`;
+}
+
+function kodeMatriks(teks){
+  let h=0;for(let i=0;i<teks.length;i++)h=(h*31+teks.charCodeAt(i))>>>0;
+  const R=rng(h),n=21,sel=[];
+  const finder=(x,y,i,j)=>{const dx=Math.abs(i-x-3),dy=Math.abs(j-y-3);const m=Math.max(dx,dy);return m===1?0:m<=3?1:0};
+  for(let j=0;j<n;j++)for(let i=0;i<n;i++){
+    const inF=(i<7&&j<7)||(i>=n-7&&j<7)||(i<7&&j>=n-7);
+    let v;
+    if(inF){const ox=i<7?0:n-7,oy=j<7?0:n-7;v=finder(ox,oy,i,j);}
+    else if((i===7&&j<8)||(j===7&&i<8)||(i===n-8&&j<8)||(j===7&&i>=n-8)||(i===7&&j>=n-8)) v=0;
+    else v=R()<.48?1:0;
+    if(v) sel.push('<rect x="'+i+'" y="'+j+'" width="1" height="1"/>');
+  }
+  return '<svg class="qr" viewBox="-1 -1 '+(n+2)+' '+(n+2)+'" aria-hidden="true" style="background:#fff;border:1px solid var(--garis)"><g fill="#231C12" shape-rendering="crispEdges">'+sel.join('')+'</g></svg>';
+}
+function struk(p){
+  const t=p.transaksi;
+  const jd=jadwalPemupukan(p,t.rencana);
+  const baris=Object.entries(t.rencana).filter(([k,v])=>v>0).map(([k,v])=>
+    `<div class="row"><span>${PUPUK[k].nama} ${kg(v)}</span><b>${rp(v*PUPUK[k].het)}</b></div>`).join('');
+  return `<div class="struk">
+    <div style="display:flex;gap:12px;align-items:flex-start">
+      <div style="flex:1">
+        <b style="font-size:15px">Bukti penebusan pupuk bersubsidi</b>
+        <div class="sub">${t.kode} · ${new Date(t.waktu).toLocaleString('id-ID',{dateStyle:'long',timeStyle:'short'})}</div>
+        <div class="sub">Kios Tani Makmur · i-Pubers · lapisan PETAK</div>
+      </div>
+      ${kodeMatriks(t.kode)}
+    </div>
+    <div class="dash"></div>
+    <div class="row"><span>Petani</span><b>${p.pemilik.nama}</b></div>
+    <div class="row"><span>Petak</span><b>${p.id} (${num(p.luas,2)} ha)</b></div>
+    <div class="dash"></div>
+    ${baris}
+    <div class="dash"></div>
+    <div class="row"><span>Dibayar petani</span><b>${rp(hetTotal(t.rencana))}</b></div>
+    <div class="row"><span>Ditanggung negara</span><b>${rp(nilaiSubsidi(t.rencana))}</b></div>
+    <div class="row mut"><span>Pagu nilai subsidi petak</span><span>${rp(nilaiSubsidi(kuotaPetak(p)))}</span></div>
+    ${t.hemat>0?`<div class="row" style="color:var(--daun)"><span>Nilai subsidi tidak terpakai</span><b>${rp(t.hemat)}</b></div>`:''}
+    <div class="dash"></div>
+    <div><b>Jadwal pemberian</b></div>
+    ${jd.filter(j=>j.isi).map((j,i)=>`<div class="row"><span>${j.fase} · ${j.tgl}</span><span>${j.isi}</span></div>`).join('')}
+    <div class="dash"></div>
+    <div class="sub">Keselarasan hara ${Math.round(t.selaras)}/100 · perkiraan hasil ${num(t.tonHa,2)} t/ha. Simpan lembar ini dan tunjukkan kepada penyuluh saat kunjungan.</div>
+    <button class="btn ghost sm" style="margin-top:10px" onclick="window.print()">Cetak struk</button>
+  </div>`;
+}
+
+function sahkan(){
+  const p=getPetak(S.trxPetak), t=takar(p), q=kuotaPetak(p);
+  const sel=keselarasan(S.rencana,t.tot), d=dampakHasil(p,sel);
+  p.transaksi={
+    kode:'PTK-2027-'+String(1000+DB.petak.filter(x=>x.transaksi).length+1),
+    waktu:new Date(p.tanam).getTime()-5*864e5+(9+DB.petak.filter(x=>x.transaksi).length%6)*36e5, rencana:{...S.rencana}, selaras:sel, tonHa:d.tonHa, deltaTon:d.deltaTon,
+    hemat:Math.max(0,nilaiSubsidi(q)-nilaiSubsidi(S.rencana))
+  };
+  S.riwayatTrx.push(p.id);
+  toast('Penebusan '+p.id+' disahkan. Keselarasan hara '+Math.round(sel)+'/100.');
+  render();
+}
+
+/* =========================================================
+   LAYAR 4 — PANTAU
+   ========================================================= */
+function agregat(){
+  let anj={urea:0,npk:0,npkfk:0,organik:0}, kuo={...anj}, rea={...anj};
+  let selSum=0, selN=0, hemat=0, tambahanTon=0, luas=0;
+  const perDusun={};
+  DB.petak.forEach(p=>{
+    const t=takar(p), q=kuotaPetak(p);
+    const r=p.transaksi?p.transaksi.rencana:p.tebusLalu;
+    for(const k in anj){anj[k]+=t.tot[k];kuo[k]+=q[k]||0;rea[k]+=r[k]||0}
+    const s=keselarasan(r,t.tot); selSum+=s*p.luas; selN+=p.luas; luas+=p.luas;
+    hemat+=Math.max(0,nilaiSubsidi(q)-nilaiSubsidi(r));
+    tambahanTon+=dampakHasil(p,s).deltaTon;
+    const d=perDusun[p.dusun]||(perDusun[p.dusun]={dusun:p.dusun,luas:0,sel:0,petak:0,gap:0,tebus:0});
+    d.luas+=p.luas; d.sel+=s*p.luas; d.petak++; d.tebus+=p.transaksi?1:0;
+    d.gap+=Math.abs(r.urea-t.tot.urea)+Math.abs(r.npk-t.tot.npk);
+  });
+  return {anj,kuo,rea,selaras:selSum/selN,hemat,tambahanTon,luas,
+    dusun:Object.values(perDusun).map(d=>({...d,sel:d.sel/d.luas})).sort((a,b)=>a.sel-b.sel)};
+}
+function layarPantau(){
+  const A=agregat(), ditebus=DB.petak.filter(p=>p.transaksi).length;
+  const terpeta=DB.petak.filter(p=>p.yakin!=='rendah').length;
+  const tren=[52,55,54,58,61,Math.round(A.selaras)];
+  const labelTren=['MT-1 25','MT-2 25','MT-3 25','MT-1 26','MT-2 26','MT-1 27'];
+
+  const koreksi=[['urea','Urea'],['npk','NPK Phonska'],['organik','Pupuk organik']].map(([k,n])=>{
+    const d=A.anj[k]-A.kuo[k];
+    return `<tr><td>${n}</td><td class="num">${kg(A.kuo[k])}</td><td class="num">${kg(A.anj[k])}</td>
+      <td class="num" style="color:${d>0?'var(--karat)':'var(--daun)'}">${d>0?'+':''}${num(d,0)} kg</td>
+      <td class="num">${pct(A.kuo[k]?d/A.kuo[k]*100:0)}</td></tr>`}).join('');
+
+  const dusunRows=A.dusun.map(d=>`<tr>
+    <td><b>Dusun ${d.dusun}</b><div class="sub">${d.petak} petak · ${num(d.luas,1)} ha</div></td>
+    <td style="width:34%"><div class="bar"><i style="width:${d.sel}%;background:${d.sel<60?'var(--karat)':d.sel<75?'var(--gabah)':'var(--daun)'}"></i></div></td>
+    <td class="num">${Math.round(d.sel)}/100</td>
+    <td class="num">${num(d.gap,0)} kg</td>
+    <td class="num">${d.sel<62?'<span class="chip rendah">prioritas kunjungan</span>':d.sel<75?'<span class="chip sedang">pantau</span>':'<span class="chip tinggi">terkendali</span>'}</td></tr>`).join('');
+
+  const antre=DB.petak.filter(p=>p.yakin==='rendah').slice(0,6).map(p=>`<tr>
+    <td>${p.id}<div class="sub">${p.pemilik.nama} · Dusun ${p.dusun}</div></td>
+    <td class="num">${num(p.luas,2)} ha</td><td class="num">${p.sumber}</td>
+    <td class="num"><button class="btn ghost sm" data-puts="${p.id}">Catat hasil uji tanah</button></td></tr>`).join('');
+
+  return `
+  <div class="grid" style="gap:14px">
+    <div><h2>Pantau alokasi dan kesenjangan</h2><p class="sub">Dasbor ini mempertemukan data tebusan i-Pubers dengan status hara dan anjuran — pertemuan yang selama ini tidak pernah terjadi.</p></div>
+
+    <div class="panel"><div class="grid" style="grid-template-columns:repeat(4,1fr);gap:0">
+      <div class="kpi"><div class="lbl">Petak terpetakan</div><div class="big">${Math.round(terpeta/48*100)}<small>%</small></div><div class="sub">${terpeta} dari 48 petak</div></div>
+      <div class="kpi"><div class="lbl">Keselarasan tebusan</div><div class="big">${Math.round(A.selaras)}<small>/100</small></div><div class="sub">${ditebus} penebusan lewat PETAK</div></div>
+      <div class="kpi"><div class="lbl">Nilai subsidi tak terpakai</div><div class="big" style="color:var(--daun)">${rpJt(A.hemat)}</div><div class="sub">kembali ke pagu nasional</div></div>
+      <div class="kpi"><div class="lbl">Perkiraan tambahan gabah</div><div class="big" style="color:var(--gabah)">${num(Math.max(0,A.tambahanTon),1)}<small> ton</small></div><div class="sub">satu desa, satu musim</div></div>
+    </div></div>
+
+    <div class="split">
+      <div class="panel">
+        <div class="hd"><h3>Keselarasan hara enam musim</h3></div>
+        <div class="pad">${grafikGaris(tren,labelTren)}
+        <p class="sub">Musim berjalan diperbarui setiap kali transaksi disahkan di kios.</p></div>
+      </div>
+      <div class="panel">
+        <div class="hd"><h3>Anjuran, kuota, dan realisasi</h3></div>
+        <div class="pad">${grafikBatang([
+          {nama:'Urea',a:A.kuo.urea,b:A.anj.urea,c:A.rea.urea},
+          {nama:'NPK',a:A.kuo.npk,b:A.anj.npk,c:A.rea.npk},
+          {nama:'Organik',a:A.kuo.organik,b:A.anj.organik,c:A.rea.organik}])}
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="hd"><h3>Prioritas penyuluhan</h3><span class="mut" style="font-size:12.5px">diurutkan dari kesenjangan terbesar</span></div>
+      <div style="overflow:auto"><table>
+        <tr><th>Wilayah</th><th>Keselarasan</th><th class="num">Skor</th><th class="num">Simpangan takaran</th><th class="num">Tindakan</th></tr>
+        ${dusunRows}</table></div>
+    </div>
+
+    <div class="split">
+      <div class="panel">
+        <div class="hd"><h3>Usulan koreksi alokasi e-RDKK 2028</h3></div>
+        <div class="pad" style="padding-top:0">
+          <table><tr><th>Jenis</th><th class="num">Alokasi kini</th><th class="num">Kebutuhan hara</th><th class="num">Selisih</th><th class="num">Koreksi</th></tr>${koreksi}</table>
+          <div class="note" style="margin-top:12px">Koreksi ini diusulkan otomatis ke Ditjen PSP sebagai bahan penetapan alokasi musim berikutnya, menggantikan usulan yang selama ini disusun dari luas lahan.</div>
+          <button class="btn sm" style="margin-top:10px" id="kirimKoreksi">Kirim usulan ke Ditjen PSP</button>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="hd"><h3>Antrean uji tanah penyuluh</h3><span class="mut" style="font-size:12.5px">${DB.petak.filter(p=>p.yakin==='rendah').length} petak berkeyakinan rendah</span></div>
+        <div style="overflow:auto"><table>
+          <tr><th>Petak</th><th class="num">Luas</th><th class="num">Sumber</th><th class="num">Tindakan</th></tr>${antre||'<tr><td colspan="4" class="mut">Seluruh petak sudah berkeyakinan memadai.</td></tr>'}</table></div>
+      </div>
+    </div>
+  </div>`;
+}
+
+function grafikGaris(v,lbl){
+  const w=520,h=150,pd=26,mn=40,mx=100;
+  const x=i=>pd+i*(w-pd*2)/(v.length-1), y=t=>h-pd-((t-mn)/(mx-mn))*(h-pd*2);
+  const d=v.map((t,i)=>(i?'L':'M')+x(i)+' '+y(t)).join(' ');
+  return `<svg viewBox="0 0 ${w} ${h}" style="width:100%;height:auto" role="img" aria-label="Tren keselarasan">
+    ${[50,75,100].map(g=>`<line x1="${pd}" x2="${w-pd}" y1="${y(g)}" y2="${y(g)}" stroke="#E3E6DA"/><text x="2" y="${y(g)+4}" font-size="10" fill="#5C5344">${g}</text>`).join('')}
+    <path d="${d}" fill="none" stroke="#2E6B41" stroke-width="2.2"/>
+    ${v.map((t,i)=>`<circle cx="${x(i)}" cy="${y(t)}" r="${i===v.length-1?5:3.2}" fill="${i===v.length-1?'#B08300':'#2E6B41'}"/>
+      <text x="${x(i)}" y="${h-6}" font-size="9.5" fill="#5C5344" text-anchor="middle">${lbl[i]}</text>`).join('')}
+    <text x="${x(v.length-1)}" y="${y(v[v.length-1])-11}" font-size="11.5" font-weight="600" fill="#B08300" text-anchor="end">${v[v.length-1]}</text>
+  </svg>`;
+}
+function grafikBatang(rows){
+  const mx=Math.max(...rows.flatMap(r=>[r.a,r.b,r.c]))*1.1||1;
+  return `<div style="display:grid;gap:12px">${rows.map(r=>`
+    <div>
+      <div style="display:flex;justify-content:space-between;font-size:13px"><b>${r.nama}</b><span class="mut">kg, se-desa</span></div>
+      ${[['Kuota e-RDKK',r.a,'#BFC7B5'],['Anjuran hara',r.b,'#2E6B41'],['Realisasi tebus',r.c,'#B08300']].map(x=>`
+        <div style="display:flex;align-items:center;gap:8px;margin-top:4px">
+          <span style="width:104px;font-size:11.5px" class="mut">${x[0]}</span>
+          <div style="flex:1;height:13px;background:#EEF0E6;border-radius:2px;overflow:hidden"><i style="display:block;height:100%;width:${x[1]/mx*100}%;background:${x[2]}"></i></div>
+          <span style="width:72px;text-align:right;font-size:12px">${num(x[1],0)}</span>
+        </div>`).join('')}
+    </div>`).join('')}</div>`;
+}
+
+/* =========================================================
+   LAYAR 5 — SIMULASI NASIONAL
+   ========================================================= */
+const NAS={volume:9.55e9,anggaran:46.87e12,produksi:60.21e6,luasPanen:11.32e6,produktivitas:6.355};
+function hitungSim(){
+  const A=agregat();
+  const c=S.simCakupan/100, k=S.simPatuh/100;
+  const hematRasio=A.hemat/nilaiSubsidi(A.kuo);        // porsi nilai subsidi yang tak perlu ditebus di desa uji
+  const hemat=NAS.anggaran*hematRasio*c*k*0.75;        // faktor kehati-hatian 0,75
+  const naikProduktivitas=0.214*c*k*0.5;               // separuh dari kenaikan tertinggi uji lapang
+  const tambahanGabah=NAS.produksi*naikProduktivitas;
+  const setaraLahan=tambahanGabah/NAS.produktivitas;   // luas panen yang tak perlu dibuka
+  const biaya=NAS.anggaran*0.0035;                     // belanja lapisan penghubung, di bawah 1% pagu
+  return {hemat,naikProduktivitas,tambahanGabah,setaraLahan,biaya};
+}
+function simKpi(){
+  const m=hitungSim();
+  return `<div class="kpi"><div class="lbl">Nilai subsidi yang tidak terbuang</div><div class="big" style="color:var(--daun)">${rpJt(m.hemat)}</div><div class="sub">per tahun anggaran</div></div>
+    <div class="kpi"><div class="lbl">Kenaikan produktivitas</div><div class="big">${pct(m.naikProduktivitas*100)}</div><div class="sub">dibanding 0,53% pada 2025</div></div>
+    <div class="kpi"><div class="lbl">Tambahan gabah kering giling</div><div class="big" style="color:var(--gabah)">${num(m.tambahanGabah/1e6,2)}<small> juta ton</small></div><div class="sub">tanpa menambah areal</div></div>
+    <div class="kpi"><div class="lbl">Setara pembukaan lahan</div><div class="big">${num(m.setaraLahan/1e3,0)}<small> ribu ha</small></div><div class="sub">areal yang tidak perlu dibuka</div></div>`;
+}
+function simBiaya(){
+  const m=hitungSim();
+  return `<div class="kv"><span>Belanja lapisan penghubung</span><b>${rpJt(m.biaya)}</b></div>
+    <div class="kv"><span>Porsi terhadap pagu subsidi</span><b>${pct(m.biaya/NAS.anggaran*100)}</b></div>
+    <div class="kv"><span>Nilai subsidi yang tidak terbuang</span><b style="color:var(--daun)">${rpJt(m.hemat)}</b></div>
+    <div class="kv"><span>Nilai tambahan gabah</span><b style="color:var(--gabah)">${rpJt(m.tambahanGabah*1000*HARGA_GKP)}</b></div>
+    <div class="kv"><span>Pengembalian belanja</span><b>${m.hemat>0?num(m.hemat/m.biaya,1)+' kali':'—'}</b></div>
+    <div class="note" style="margin-top:12px">Tidak ada belanja perangkat keras baru. PETAK menumpang basis data e-RDKK, aplikasi i-Pubers, Perangkat Uji Tanah Sawah penyuluh, dan citra satelit gratis yang semuanya sudah dibiayai negara.</div>`;
+}
+function layarSimulasi(){
+  return `
+  <div class="grid" style="gap:14px">
+    <div><h2>Bila lapisan ini dipasang secara nasional</h2>
+    <p class="sub">Dasar hitungan: pagu subsidi ${rpJt(NAS.anggaran)} untuk 9,55 juta ton pada 2026, produksi padi 60,21 juta ton gabah kering giling, dan luas panen 11,32 juta hektare. Rasio efisiensi diambil dari hasil desa uji pada dasbor Pantau, lalu ditahan dengan faktor kehati-hatian.</p></div>
+
+    <div class="panel">
+      <div class="hd"><h3>Atur skenario</h3></div>
+      <div class="pad" style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+        <div>
+          <div style="display:flex;justify-content:space-between"><span>Petak yang terpetakan</span><b id="simLblA">${S.simCakupan}%</b></div>
+          <input type="range" min="10" max="100" step="5" value="${S.simCakupan}" id="simA">
+          <p class="sub">Bergantung pada kecepatan uji tanah penyuluh dan cakupan citra satelit.</p>
+        </div>
+        <div>
+          <div style="display:flex;justify-content:space-between"><span>Tebusan mengikuti anjuran</span><b id="simLblB">${S.simPatuh}%</b></div>
+          <input type="range" min="10" max="100" step="5" value="${S.simPatuh}" id="simB">
+          <p class="sub">Bergantung pada pendampingan kios dan kepercayaan petani pada anjuran.</p>
+        </div>
+      </div>
+      <div class="grid" id="simKpi" style="grid-template-columns:repeat(4,1fr);gap:0;border-top:1px solid var(--garis-2)">${simKpi()}</div>
+    </div>
+
+    <div class="split">
+      <div class="panel">
+        <div class="hd"><h3>Jalan menuju swasembada 2029</h3></div>
+        <div class="pad" id="simJalan">${grafikJalan(hitungSim().naikProduktivitas)}</div>
+      </div>
+      <div class="panel">
+        <div class="hd"><h3>Belanja dan pengembalian</h3></div>
+        <div class="pad" id="simBiaya">${simBiaya()}</div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="hd"><h3>Tahapan penerapan</h3></div>
+      <div class="pad"><div class="jadwal">
+        ${[['2027','Uji coba pada sepuluh kabupaten sentra padi. Peta hara disusun, modul takar dikalibrasi dengan Perangkat Uji Tanah Sawah, penukaran jenis dibuka terbatas.'],
+           ['2028','Perluasan ke seluruh sentra padi Jawa dan Sulawesi Selatan. Hasil pantau dipakai mengoreksi alokasi e-RDKK secara nasional.'],
+           ['2029','Kuota hara menjadi baku nasional. Alokasi disusun dari kebutuhan hara, bukan dari luas lahan.']].map((x,i,a)=>`
+        <div class="n">${i+1}</div><div class="txt"><b>${x[0]}</b><div style="margin-top:2px">${x[1]}</div></div>
+        `).join('')}
+      </div></div>
+    </div>
+    <div class="foot">Angka pada layar ini adalah proyeksi purwarupa. Rasio efisiensi diturunkan dari selisih anjuran dan kuota pada desa uji, dikalikan cakupan dan kepatuhan, lalu ditahan dengan faktor kehati-hatian 0,75 untuk penghematan dan 0,5 untuk kenaikan hasil.</div>
+  </div>`;
+}
+function grafikJalan(naik){
+  const w=520,h=170,pd=30;
+  const th=[2025,2026,2027,2028,2029];
+  const dasar=[60.21,60.8,61.4,62.0,62.6];
+  const petak=dasar.map((v,i)=>v*(1+naik*[0,0,.35,.7,1][i]));
+  const mx=Math.max(...petak)*1.02, mn=59;
+  const x=i=>pd+i*(w-pd*2)/4, y=v=>h-pd-((v-mn)/(mx-mn))*(h-pd*2);
+  const line=a=>a.map((v,i)=>(i?'L':'M')+x(i)+' '+y(v)).join(' ');
+  const target=63.5;
+  return `<svg viewBox="0 0 ${w} ${h}" style="width:100%;height:auto" role="img" aria-label="Proyeksi produksi padi">
+    <line x1="${pd}" x2="${w-pd}" y1="${y(target)}" y2="${y(target)}" stroke="#9E3B26" stroke-dasharray="4 3"/>
+    <text x="${w-pd}" y="${y(target)-6}" font-size="10" fill="#9E3B26" text-anchor="end">Kebutuhan konsumsi nasional</text>
+    <path d="${line(dasar)}" fill="none" stroke="#BFC7B5" stroke-width="2"/>
+    <path d="${line(petak)}" fill="none" stroke="#2E6B41" stroke-width="2.4"/>
+    ${th.map((t,i)=>`<text x="${x(i)}" y="${h-8}" font-size="10" fill="#5C5344" text-anchor="middle">${t}</text>`).join('')}
+    <circle cx="${x(4)}" cy="${y(petak[4])}" r="4.5" fill="#2E6B41"/>
+    <text x="${x(4)-6}" y="${y(petak[4])-8}" font-size="11" font-weight="600" fill="#2E6B41" text-anchor="end">${num(petak[4],1)} juta ton</text>
+    <text x="${x(4)-6}" y="${y(dasar[4])+16}" font-size="10.5" fill="#7A8074" text-anchor="end">tanpa PETAK ${num(dasar[4],1)}</text>
+  </svg>`;
+}
+
+/* =========================================================
+   RENDER & PERISTIWA
+   ========================================================= */
+function render(){
+  const v=$('#view');
+  v.innerHTML = S.tab==='peta'?layarPeta():S.tab==='takar'?layarTakar():S.tab==='tebus'?layarTebus():S.tab==='pantau'?layarPantau():layarSimulasi();
+  pasangPeristiwa();
+}
+function pasangPeristiwa(){
+  const v=$('#view');
+  v.querySelectorAll('[data-layer]').forEach(b=>b.onclick=()=>{S.layer=b.dataset.layer;render()});
+  v.querySelectorAll('.petak').forEach(el=>el.onclick=()=>{S.sel=el.dataset.id;
+    $('#detail').innerHTML=detailPetak(getPetak(S.sel),takar(getPetak(S.sel)),kuotaPetak(getPetak(S.sel)));
+    v.querySelectorAll('.petak').forEach(x=>x.classList.toggle('sel',x.dataset.id===S.sel));
+    pasangPeristiwa();});
+  v.querySelectorAll('[data-goto]').forEach(b=>b.onclick=()=>{
+    S.sel=b.dataset.id; if(b.dataset.goto==='tebus') mulaiTrx(b.dataset.id);
+    S.tab=b.dataset.goto; gambarRail(); render(); window.scrollTo(0,0)});
+  const sp=$('#pilihPetak'); if(sp) sp.onchange=()=>{S.sel=sp.value;render()};
+  v.querySelectorAll('[data-trx]').forEach(b=>b.onclick=()=>{mulaiTrx(b.dataset.trx);render();window.scrollTo(0,0)});
+  const cari=$('#cariNik'); if(cari) cari.onclick=()=>{
+    const t=DB.petani.find(x=>x.nik===$('#nikInput').value.trim());
+    if(!t) return toast('NIK tidak ditemukan pada daftar e-RDKK kios ini. Periksa kembali angkanya atau pilih dari daftar di bawah.');
+    const pk=DB.petak.find(x=>x.pemilik.id===t.id); mulaiTrx(pk.id); render();
+  };
+  const acak=$('#acakNik'); if(acak) acak.onclick=()=>{
+    const t=DB.petani[Math.floor(Math.random()*DB.petani.length)];
+    $('#nikInput').value=t.nik; toast('Kartu terbaca: '+t.nama+'. Tekan Cari petani.');
+  };
+  const bt=$('#batalTrx'); if(bt) bt.onclick=()=>{S.trxPetak=null;render()};
+  v.querySelectorAll('[data-step]').forEach(b=>b.onclick=()=>{
+    const [k,d]=b.dataset.step.split('|');
+    S.rencana[k]=Math.max(0,(S.rencana[k]||0)+Number(d)); render();});
+  v.querySelectorAll('[data-inp]').forEach(i=>i.onchange=()=>{
+    S.rencana[i.dataset.inp]=Math.max(0,Math.round(Number(i.value)||0)); render();});
+  const pa=$('#pakaiAnjuran'); if(pa) pa.onclick=()=>{const t=takar(getPetak(S.trxPetak));
+    S.rencana={urea:t.tot.urea,npk:t.tot.npk,npkfk:0,organik:t.tot.organik};render();
+    toast('Anjuran hara diterapkan. Periksa sisa nilai subsidi sebelum disahkan.')};
+  const pk=$('#pakaiKuota'); if(pk) pk.onclick=()=>{S.rencana={...kuotaPetak(getPetak(S.trxPetak)),npkfk:0,organik:0};render()};
+  const hb=$('#habiskan'); if(hb) hb.onclick=()=>{
+    const p=getPetak(S.trxPetak), q=kuotaPetak(p), t=takar(p);
+    let sisa=nilaiSubsidi(q)-nilaiSubsidi(S.rencana);
+    if(sisa<=0) return toast('Nilai subsidi petak ini sudah habis terpakai.');
+    const tambah=r5(sisa/PUPUK.organik.subsidi);
+    const maks=r5(500*p.luas);
+    S.rencana.organik=Math.min(maks,(S.rencana.organik||0)+tambah);
+    render(); toast('Sisa nilai subsidi dialihkan ke pupuk organik, sampai batas 500 kg per hektare.');
+  };
+  const sh=$('#sahkan'); if(sh) sh.onclick=sahkan;
+  const kk=$('#kirimKoreksi'); if(kk) kk.onclick=()=>toast('Usulan koreksi alokasi terkirim ke Ditjen PSP sebagai lampiran penetapan alokasi 2028.');
+  v.querySelectorAll('[data-puts]').forEach(b=>b.onclick=()=>{
+    const p=getPetak(b.dataset.puts); p.sumber='PUTS'; p.yakin='tinggi';
+    toast('Hasil uji tanah petak '+p.id+' tercatat. Anjuran naik ke keyakinan tinggi.'); render();});
+  const a=$('#simA'), bB=$('#simB');
+  const segarSim=()=>{$('#simLblA').textContent=S.simCakupan+'%';$('#simLblB').textContent=S.simPatuh+'%';
+    $('#simKpi').innerHTML=simKpi();$('#simBiaya').innerHTML=simBiaya();
+    $('#simJalan').innerHTML=grafikJalan(hitungSim().naikProduktivitas);};
+  if(a) a.oninput=()=>{S.simCakupan=+a.value;segarSim()};
+  if(bB) bB.oninput=()=>{S.simPatuh=+bB.value;segarSim()};
+}
+$('#peran').onchange=e=>{S.peran=e.target.value;
+  toast({kios:'Peran petugas kios. Layar penebusan menjadi layar kerja utama.',
+    penyuluh:'Peran penyuluh. Antrean uji tanah pada dasbor Pantau menjadi daftar kunjungan.',
+    pusat:'Peran analis pusat. Dasbor Pantau dan Simulasi terbuka penuh.'}[e.target.value]);
+  S.tab=e.target.value==='kios'?'tebus':e.target.value==='penyuluh'?'peta':'pantau';
+  gambarRail();render()};
+
+const st=document.createElement('style');
+st.textContent='@keyframes masuk{from{opacity:0}to{opacity:1}}';
+document.head.appendChild(st);
+
+gambarRail(); mulaiTrx(DB.petak[19].id); S.tab='peta'; render();
+</script>
